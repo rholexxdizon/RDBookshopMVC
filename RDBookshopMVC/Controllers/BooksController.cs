@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using RDBookshopMVC.Data;
 using RDBookshopMVC.Models;
 
@@ -20,15 +21,26 @@ namespace RDBookshopMVC.Controllers
         }
 
         // GET: Books
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? categoryId)
         {
-            var rDBookshopDbContext = _context.Books.Include(b => b.Author).Include(b => b.Category);
-            return View(await rDBookshopDbContext.ToListAsync());
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+
+            var rDBookshopDbContext =  _context.Books.Include(b => b.Author).Include(b => b.Category).AsQueryable();
+
+            if (categoryId.HasValue)
+            {
+                rDBookshopDbContext = rDBookshopDbContext.Where(b => b.CategoryId == categoryId);
+            }
+
+            var books = await rDBookshopDbContext.ToListAsync();
+
+            return View(rDBookshopDbContext);
         }
 
         // GET: Books/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            ViewBag.Categories = await _context.Categories.ToListAsync();
             if (id == null)
             {
                 return NotFound();
@@ -47,8 +59,9 @@ namespace RDBookshopMVC.Controllers
         }
 
         // GET: Books/Create
-        public IActionResult Create()
+        public async Task <IActionResult> Create()
         {
+            ViewBag.Categories = await _context.Categories.ToListAsync();
             ViewBag.AuthorId = new SelectList(_context.Authors, "Id", "Name");
             ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name");
             return View();
@@ -77,6 +90,9 @@ namespace RDBookshopMVC.Controllers
         // GET: Books/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.AuthorId = new SelectList(_context.Authors, "Id", "Name");
+            ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name");
             if (id == null)
             {
                 return NotFound();
@@ -87,8 +103,7 @@ namespace RDBookshopMVC.Controllers
             {
                 return NotFound();
             }
-            ViewData["AuthorId"] = new SelectList(_context.Authors, "Id", "Id", book.AuthorId);
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Id", book.CategoryId);
+            
             return View(book);
         }
 
@@ -132,6 +147,7 @@ namespace RDBookshopMVC.Controllers
         // GET: Books/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            ViewBag.Categories = await _context.Categories.ToListAsync(); 
             if (id == null)
             {
                 return NotFound();
